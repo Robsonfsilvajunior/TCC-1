@@ -117,3 +117,42 @@ button {
 button:hover {
     background-color: #2980b9;
 }
+
+/* Estilo dos ícones sociais */
+.social-icon {
+    width: 30px;
+    filter: invert(1); /* Branco */
+    transition: opacity 0.3s ease; /* Transição suave */
+}
+
+/* Efeito de hover para escurecer os ícones */
+.social-icon:hover {
+    opacity: 0.6; /* Escurece ao passar o mouse */
+}
+
+/* Logo como link para página inicial */
+.logo-link {
+    text-decoration: none;
+    color: white; /* Define a cor do nome da loja */
+    transition: color 0.3s ease;
+}
+
+/* Efeito de hover no nome da loja */
+.logo-link:hover {
+    color: lightgray; /* Muda a cor ao passar o mouse */
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    margin: 0;
+    padding: 0;
+}
+
+nav ul li {
+    margin-left: 2rem;
+}
+
+nav ul li a {
+    text-decoration: none;
+}
