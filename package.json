@@ -1,0 +1,51 @@
+{
+  "name": "tcc-drivex",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "predev": "node scripts/testMongoConnection.mjs",
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview",
+    "migrate": "node scripts/migrateToMongo.js",
+    "db:test": "node scripts/testMongoConnection.mjs"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.11.1",
+    "@hookform/resolvers": "^3.2.0",
+    "firebase": "^10.1.0",
+    "localforage": "^1.10.0",
+    "match-sorter": "^6.3.1",
+    "mongodb": "^6.18.0",
+    "mongoose": "^8.17.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.45.4",
+    "react-hot-toast": "^2.4.1",
+    "react-icons": "^4.10.1",
+    "react-router-dom": "^6.15.0",
+    "react-spinners": "^0.13.8",
+    "sort-by": "^1.2.0",
+    "swiper": "^10.2.0",
+    "uuid": "^9.0.0",
+    "zod": "^3.22.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
+    "@types/uuid": "^9.0.2",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vitejs/plugin-react": "^4.0.3",
+    "autoprefixer": "^10.4.15",
+    "eslint": "^8.45.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.3",
+    "postcss": "^8.4.28",
+    "tailwindcss": "^3.3.3",
+    "typescript": "^5.0.2",
+    "vite": "^4.4.5"
+  }
+}

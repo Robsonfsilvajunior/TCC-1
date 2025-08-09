@@ -1,0 +1,1 @@
+const uri = "mongodb+srv://tccunivap:SomosAmigos@cluster0.u48bk0h.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
