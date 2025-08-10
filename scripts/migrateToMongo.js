@@ -1,11 +1,14 @@
 // Script para migrar dados do Firebase Firestore para MongoDB Atlas
 // Execute este script após configurar o MongoDB Atlas
+// DESABILITADO - Firebase removido do projeto
 
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
-import { MongoClient, ServerApiVersion } from "mongodb";
+// import { initializeApp } from "firebase/app";
+// import { getFirestore, collection, getDocs } from "firebase/firestore";
+// import { MongoClient, ServerApiVersion } from "mongodb";
 
 // Configuração do Firebase (mantenha a mesma do seu projeto)
+// DESABILITADO - Firebase removido do projeto
+/*
 const firebaseConfig = {
   apiKey: "AIzaSyAcezCC5NxaxcxI_RTMpV22Xxse6_tPSEg",
   authDomain: "drive-32767.firebaseapp.com",
@@ -14,19 +17,22 @@ const firebaseConfig = {
   messagingSenderId: "794458175139",
   appId: "1:794458175139:web:54cc07dd926be8cc15f116",
 };
+*/
 
 // Configuração do MongoDB (substitua pela sua string de conexão)
 const MONGODB_URI = "mongodb+srv://tccunivap:SomosAmigos@cluster0.u48bk0h.mongodb.net/TCC?retryWrites=true&w=majority&appName=Cluster0";
 
 async function migrateData() {
   try {
-    console.log("Iniciando migração...");
-
+    console.log("Migração desabilitada - Firebase removido do projeto");
+    return;
+    
     // Conectar ao Firebase
-    const firebaseApp = initializeApp(firebaseConfig);
-    const firestore = getFirestore(firebaseApp);
+    // const firebaseApp = initializeApp(firebaseConfig);
+    // const firestore = getFirestore(firebaseApp);
 
     // Conectar ao MongoDB
+    /*
     const mongoClient = new MongoClient(MONGODB_URI, {
       serverApi: {
         version: ServerApiVersion.v1,
@@ -68,16 +74,19 @@ async function migrateData() {
     console.log(`Total de veículos no MongoDB: ${mongoVehicles.length}`);
 
     console.log("Migração concluída com sucesso!");
+    */
 
   } catch (error) {
     console.error("Erro durante a migração:", error);
   } finally {
     // Fechar conexões
+    /*
     if (mongoClient) {
       await mongoClient.close();
     }
+    */
   }
 }
 
 // Executar migração
-migrateData();
+// migrateData(); // DESABILITADO - Firebase removido do projeto

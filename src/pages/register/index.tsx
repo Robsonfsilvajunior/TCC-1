@@ -9,12 +9,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BsFillPersonPlusFill } from "react-icons/bs";
 
-import { auth } from "../../services/firebaseConnection";
-import {
-  createUserWithEmailAndPassword,
-  updateProfile,
-  signOut,
-} from "firebase/auth";
+
 import { AuthContext } from "../../contexts/authContext";
 
 import toast from "react-hot-toast";
@@ -45,41 +40,26 @@ export function Register() {
     mode: "onChange",
   });
 
-  useEffect(() => {
-    async function handleLogout() {
-      await signOut(auth);
-    }
 
-    handleLogout();
-  }, []);
 
   async function onSubmit(data: FormData) {
-    createUserWithEmailAndPassword(auth, data.email, data.password)
-      .then(async (user) => {
-        await updateProfile(user.user, {
-          displayName: data.name,
-        });
-
-        handleInfoUser({
-          name: data.name,
-          email: data.email,
-          uid: user.user.uid,
-        });
-
-        
-        console.log("CADASTRADO COM SUCESSO!");
-        const displayName = user.user.displayName || data.name;
-        toast.success(`Cadastro realizado!\nBem-vindo(a), ${displayName}!`, {
-          style: {
-            fontSize: "14px",
-          },
-        });
-        navigate("/", { replace: true });
-      })
-      .catch((error) => {
-        console.log("ERRO AO CADASTRAR ESTE USUARIO");
-        console.log(error);
-      });
+    // Simulação de cadastro simples para desenvolvimento
+    // Em produção, isso seria substituído por uma chamada real para o MongoDB
+    const mockUser = {
+      uid: "user-" + Date.now(),
+      name: data.name,
+      email: data.email
+    };
+    
+    handleInfoUser(mockUser);
+    
+    console.log("CADASTRADO COM SUCESSO!");
+    toast.success(`Cadastro realizado!\nBem-vindo(a), ${data.name}!`, {
+      style: {
+        fontSize: "14px",
+      },
+    });
+    navigate("/", { replace: true });
   }
 
   return (

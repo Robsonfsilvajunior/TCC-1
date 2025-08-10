@@ -9,8 +9,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RiLoginBoxLine } from "react-icons/ri";
-import { signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { auth } from "../../services/firebaseConnection";
+
 import { AuthContext } from "../../contexts/authContext";
 
 import toast from "react-hot-toast";
@@ -26,7 +25,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export function Login() {
-  const { user } = useContext(AuthContext);
+  const { user, handleInfoUser } = useContext(AuthContext);
   console.log(user);
 
   const navigate = useNavigate();
@@ -39,32 +38,24 @@ export function Login() {
     mode: "onChange",
   });
 
-  useEffect(() => {
-    async function handleLogout() {
-      await signOut(auth);
-    }
 
-    handleLogout();
-  }, []);
 
   function onSubmit(data: FormData) {
-    signInWithEmailAndPassword(auth, data.email, data.password)
-      .then((userCredential) => {
-        const user = userCredential.user;
-        console.log("Login bem-sucedido");
-        console.log(user);
-        const displayName = user?.displayName || "Usuário";
-        toast.success(`Bem-vindo(a), ${displayName}!`, {
-          style: {
-            fontSize: "14px",
-          },
-        });
-        navigate("/", { replace: true });
-      })
-      .catch((err) => {
-        console.log(err);
-        toast.error("Email ou senha incorretos!\nVerifique suas credenciais.");
-      });
+    // Simulação de login simples para desenvolvimento
+    // Em produção, isso seria substituído por uma chamada real para o MongoDB
+    const mockUser = {
+      uid: "user-" + Date.now(),
+      name: data.email.split('@')[0],
+      email: data.email
+    };
+    
+    handleInfoUser(mockUser);
+    toast.success(`Bem-vindo(a), ${mockUser.name}!`, {
+      style: {
+        fontSize: "14px",
+      },
+    });
+    navigate("/", { replace: true });
   }
 
   return (

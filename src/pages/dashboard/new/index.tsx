@@ -12,14 +12,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { AuthContext } from "../../../contexts/authContext";
 import { v4 as uuidV4 } from "uuid";
-import { storage } from "../../../services/firebaseConnection";
-import {
-  ref,
-  uploadBytes,
-  getDownloadURL,
-  deleteObject,
-} from "firebase/storage";
-// import { vehicleService } from "../../../services/mongodbConnection";
+
+import { vehicleService } from "../../../services/mongodbConnection";
 import { toast } from "react-hot-toast";
 
 const schema = z.object({
@@ -151,21 +145,17 @@ export function New() {
     const currentUid = user?.uid;
     const uidImage = uuidV4();
 
-    const uploadRef = ref(storage, `images/${currentUid}/${uidImage}`);
+    // Simulação de upload para desenvolvimento
+    // Em produção, isso seria substituído por uma chamada real para o MongoDB
+    const imageItem = {
+      name: uidImage,
+      uid: currentUid,
+      previewUrl: URL.createObjectURL(image),
+      url: URL.createObjectURL(image), // URL local temporária
+    };
 
-    uploadBytes(uploadRef, image).then((snapshot) => {
-      getDownloadURL(snapshot.ref).then((downLoadUrl) => {
-        const imageItem = {
-          name: uidImage,
-          uid: currentUid,
-          previewUrl: URL.createObjectURL(image),
-          url: downLoadUrl,
-        };
-
-        setCarImages((images) => [...images, imageItem]);
-        toast.success("Imagem adicionada com sucesso!");
-      });
-    });
+    setCarImages((images) => [...images, imageItem]);
+    toast.success("Imagem adicionada com sucesso!");
   }
 
   async function onSubmit(data: FormData) {
@@ -174,18 +164,23 @@ export function New() {
       return;
     }
 
-    // Temporariamente desabilitado para teste
-    toast("Funcionalidade temporariamente desabilitada para teste");
-    console.log("Dados do veículo:", data);
-    console.log("Imagens:", carImages);
+    try {
+      // Enviar apenas as URLs das imagens (simulação, pois não há upload real)
+      const images = carImages.map(img => img.url);
+      const payload = { ...data, images };
+      await vehicleService.createVehicle(payload);
+      toast.success('Veículo cadastrado com sucesso!');
+      reset();
+      setCarImages([]);
+    } catch (err) {
+      toast.error('Erro ao cadastrar veículo!');
+    }
   }
 
   async function handleDeleteImage(item: ImageItemProps) {
-    const imagePath = `images/${item.uid}/${item.name}`;
-    const imageRef = ref(storage, imagePath);
-
     try {
-      await deleteObject(imageRef);
+      // Simulação de remoção para desenvolvimento
+      // Em produção, isso seria substituído por uma chamada real para o MongoDB
       setCarImages((prevCarImages) =>
         prevCarImages.filter((car: ImageItemProps) => car.url !== item.url)
       );

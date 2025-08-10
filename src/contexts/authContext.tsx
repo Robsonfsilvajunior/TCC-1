@@ -1,6 +1,4 @@
 import { ReactNode, createContext, useState, useEffect } from "react";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../services/firebaseConnection";
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -11,6 +9,7 @@ type AuthContextData = {
   loadingAuth: boolean;
   handleInfoUser: ({ name, email, uid }: userProps) => void;
   user: userProps | null;
+  signOut: () => void;
 };
 
 interface userProps {
@@ -26,32 +25,29 @@ function AuthProvider({ children }: AuthProviderProps) {
   const [loadingAuth, setLoadingAuth] = useState(true);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUser({
-          uid: user.uid,
-          name: user?.displayName,
-          email: user?.email,
-        });
-
-        setLoadingAuth(false);
-      } else {
-        setUser(null);
-        setLoadingAuth(false);
+    // Verificar se há usuário salvo no localStorage
+    const savedUser = localStorage.getItem('drivex_user');
+    if (savedUser) {
+      try {
+        const userData = JSON.parse(savedUser);
+        setUser(userData);
+      } catch (error) {
+        console.error('Erro ao carregar usuário do localStorage:', error);
+        localStorage.removeItem('drivex_user');
       }
-    });
-
-    return () => {
-      unsub();
-    };
+    }
+    setLoadingAuth(false);
   }, []);
 
   function handleInfoUser({ name, email, uid }: userProps) {
-    setUser({
-      name,
-      email,
-      uid,
-    });
+    const userData = { name, email, uid };
+    setUser(userData);
+    localStorage.setItem('drivex_user', JSON.stringify(userData));
+  }
+
+  function signOut() {
+    setUser(null);
+    localStorage.removeItem('drivex_user');
   }
 
   return (
@@ -61,6 +57,7 @@ function AuthProvider({ children }: AuthProviderProps) {
         loadingAuth,
         handleInfoUser,
         user,
+        signOut,
       }}
     >
       {children}

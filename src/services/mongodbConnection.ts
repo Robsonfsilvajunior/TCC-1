@@ -20,36 +20,46 @@ export async function closeConnection() {
   // Sem-operação no frontend
 }
 
-type AnyRecord = Record<string, any>;
+const API_URL = 'http://localhost:5000/veiculos';
 
 export const vehicleService = {
-  async getAllVehicles(): Promise<AnyRecord[]> {
-    return [];
+  async getAllVehicles(): Promise<any[]> {
+    const res = await fetch(API_URL);
+    if (!res.ok) throw new Error('Erro ao buscar veículos');
+    return res.json();
   },
 
-  async getVehiclesByUser(_uid: string): Promise<AnyRecord[]> {
-    return [];
+  async getVehicleById(id: string): Promise<any> {
+    const res = await fetch(`${API_URL}/${id}`);
+    if (!res.ok) throw new Error('Veículo não encontrado');
+    return res.json();
   },
 
-  async getVehicleById(_id: string): Promise<AnyRecord | null> {
-    // Retorna null para que as telas que dependem disso tratem a navegação
-    return null;
+  async createVehicle(vehicleData: object): Promise<any> {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(vehicleData),
+    });
+    if (!res.ok) throw new Error('Erro ao cadastrar veículo');
+    return res.json();
   },
 
-  async createVehicle(_vehicleData: AnyRecord): Promise<AnyRecord> {
-    // Lógica real será implementada depois
-    return { acknowledged: true, insertedId: null };
+  async updateVehicle(id: string, vehicleData: object): Promise<any> {
+    const res = await fetch(`${API_URL}/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(vehicleData),
+    });
+    if (!res.ok) throw new Error('Erro ao atualizar veículo');
+    return res.json();
   },
 
-  async deleteVehicle(_id: string): Promise<AnyRecord> {
-    return { acknowledged: true, deletedCount: 0 };
+  async deleteVehicle(id: string): Promise<any> {
+    const res = await fetch(`${API_URL}/${id}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error('Erro ao deletar veículo');
+    return res.json();
   },
-
-  async searchVehicles(_searchTerm: string): Promise<AnyRecord[]> {
-    return [];
-  },
-
-  async getVehiclesByBodyType(_bodyType: string): Promise<AnyRecord[]> {
-    return [];
-  }
 };

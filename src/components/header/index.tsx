@@ -1,20 +1,17 @@
-import { useState } from "react";
-import { useContext } from "react";
+import { useState, useContext } from "react";
 import { AuthContext } from "../../contexts/authContext";
 import { Link } from "react-router-dom";
 import { RiLoginBoxLine, RiLogoutBoxLine } from "react-icons/ri";
 import { GiHamburgerMenu } from "react-icons/gi";
 import logoImg from "../../assets/drivexLogo.png";
-import { signOut } from "firebase/auth";
-import { auth } from "../../services/firebaseConnection";
 import toast from "react-hot-toast";
 
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { signed, loadingAuth } = useContext(AuthContext);
+  const { signed, loadingAuth, signOut } = useContext(AuthContext);
 
   async function handleLogout() {
-    await signOut(auth);
+    signOut();
     toast.success("Logout realizado. Até a próxima!", {
       style: {
         fontSize: "14px",
