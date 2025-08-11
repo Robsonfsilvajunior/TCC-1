@@ -1,15 +1,34 @@
-// Backend Node.js puro para CRUD de veículos no MongoDB
-// Requer: npm install mongodb
+// Backend Node.js puro para CRUD de veículos no MongoDB com suporte a imagens
+// Requer: npm install mongodb multer
 
 const http = require('http');
 const { MongoClient, ObjectId } = require('mongodb');
+const multer = require('multer');
+const path = require('path');
 
 const PORT = 5000;
 const MONGODB_URI = 'mongodb+srv://tccunivap:SomosAmigos@cluster0.u48bk0h.mongodb.net/TCC?retryWrites=true&w=majority&appName=Cluster0';
 const DB_NAME = 'TCC';
 const COLLECTION = 'veiculos';
+const IMAGES_COLLECTION = 'images';
 
-let db, collection;
+let db, collection, imagesCollection;
+
+// Configuração do multer para upload de imagens
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Apenas imagens são permitidas'));
+    }
+  }
+});
 
 async function connectDB() {
   if (!db) {
@@ -17,13 +36,28 @@ async function connectDB() {
     await client.connect();
     db = client.db(DB_NAME);
     collection = db.collection(COLLECTION);
+    imagesCollection = db.collection(IMAGES_COLLECTION);
     console.log('Conectado ao MongoDB!');
   }
 }
 
 function sendJson(res, status, data) {
-  res.writeHead(status, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' });
+  res.writeHead(status, { 
+    'Content-Type': 'application/json', 
+    'Access-Control-Allow-Origin': '*', 
+    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS', 
+    'Access-Control-Allow-Headers': 'Content-Type' 
+  });
   res.end(JSON.stringify(data));
+}
+
+function sendImage(res, status, data, contentType) {
+  res.writeHead(status, { 
+    'Content-Type': contentType, 
+    'Access-Control-Allow-Origin': '*',
+    'Cache-Control': 'public, max-age=31536000' // Cache por 1 ano
+  });
+  res.end(data);
 }
 
 function parseBody(req) {
@@ -48,14 +82,112 @@ const server = http.createServer(async (req, res) => {
 
   // CORS preflight
   if (req.method === 'OPTIONS') {
-    res.writeHead(204, { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' });
+    res.writeHead(204, { 
+      'Access-Control-Allow-Origin': '*', 
+      'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS', 
+      'Access-Control-Allow-Headers': 'Content-Type, Content-Length, Authorization, Accept, Origin, X-Requested-With' 
+    });
     return res.end();
+  }
+
+  // GET /images/:id - serve imagem do MongoDB
+  if (req.method === 'GET' && url.pathname.startsWith('/images/')) {
+    const id = url.pathname.split('/')[2];
+    try {
+      const image = await imagesCollection.findOne({ _id: new ObjectId(id) });
+      if (!image) {
+        return sendJson(res, 404, { error: 'Imagem não encontrada' });
+      }
+      return sendImage(res, 200, image.data.buffer, image.contentType);
+    } catch (error) {
+      return sendJson(res, 400, { error: 'ID de imagem inválido' });
+    }
+  }
+
+  // POST /upload-images - upload de imagens
+  if (req.method === 'POST' && url.pathname === '/upload-images') {
+    try {
+      console.log('Iniciando upload de imagem...');
+      console.log('Headers:', req.headers);
+      
+      // Usar multer diretamente aqui para evitar problemas de compatibilidade
+      upload.single('images')(req, res, async (err) => {
+        if (err) {
+          console.error('Erro do multer:', err);
+          return sendJson(res, 400, { error: err.message });
+        }
+        
+        const file = req.file;
+        console.log('Arquivo recebido:', file);
+        
+        if (!file) {
+          console.log('Nenhum arquivo recebido');
+          return sendJson(res, 400, { error: 'Nenhuma imagem enviada' });
+        }
+
+        try {
+          console.log('Processando arquivo:', file.originalname, file.mimetype, file.size);
+          
+          const imageDoc = {
+            filename: file.originalname,
+            contentType: file.mimetype,
+            data: file.buffer,
+            size: file.size,
+            uploadDate: new Date()
+          };
+          
+          const result = await imagesCollection.insertOne(imageDoc);
+          console.log('Imagem salva no MongoDB:', result.insertedId);
+          
+          const uploadedImage = {
+            id: result.insertedId.toString(),
+            filename: file.originalname,
+            contentType: file.mimetype,
+            size: file.size
+          };
+
+          console.log('Upload concluído com sucesso');
+          return sendJson(res, 201, { 
+            message: 'Imagem enviada com sucesso',
+            images: [uploadedImage]
+          });
+        } catch (dbError) {
+          console.error('Erro ao salvar no MongoDB:', dbError);
+          return sendJson(res, 500, { error: 'Erro interno do servidor' });
+        }
+      });
+      
+      // Não retornar aqui, pois o multer vai chamar o callback
+      return;
+      
+    } catch (error) {
+      console.error('Erro no upload:', error);
+      return sendJson(res, 400, { error: error.message });
+    }
   }
 
   // GET /veiculos - lista todos
   if (req.method === 'GET' && url.pathname === '/veiculos') {
     const veiculos = await collection.find({}).toArray();
-    return sendJson(res, 200, veiculos);
+    
+    // Corrigir URLs das imagens para veículos existentes
+    const veiculosCorrigidos = veiculos.map(veiculo => {
+      if (veiculo.images && Array.isArray(veiculo.images)) {
+        veiculo.images = veiculo.images.map(imgUrl => {
+          // Se já é uma URL completa, manter; se não, converter
+          if (imgUrl.startsWith('http://')) {
+            return imgUrl;
+          } else if (imgUrl.startsWith('/images/')) {
+            return `http://localhost:5000${imgUrl}`;
+          } else {
+            return `http://localhost:5000/images/${imgUrl}`;
+          }
+        });
+      }
+      return veiculo;
+    });
+    
+    return sendJson(res, 200, veiculosCorrigidos);
   }
 
   // GET /veiculos/:id - busca por id
@@ -74,6 +206,12 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'POST' && url.pathname === '/veiculos') {
     const data = await parseBody(req);
     if (!data || !data.name) return sendJson(res, 400, { error: 'Dados inválidos' });
+    
+    // Se houver imagens, converter os IDs para URLs completas
+    if (data.images && Array.isArray(data.images)) {
+      data.images = data.images.map(imageId => `http://localhost:5000/images/${imageId}`);
+    }
+    
     const result = await collection.insertOne(data);
     return sendJson(res, 201, { acknowledged: result.acknowledged, insertedId: result.insertedId });
   }
@@ -83,6 +221,11 @@ const server = http.createServer(async (req, res) => {
     const id = url.pathname.split('/')[2];
     const data = await parseBody(req);
     try {
+      // Se houver imagens, converter os IDs para URLs completas
+      if (data.images && Array.isArray(data.images)) {
+        data.images = data.images.map(imageId => `http://localhost:5000/images/${imageId}`);
+      }
+      
       const result = await collection.updateOne({ _id: new ObjectId(id) }, { $set: data });
       if (result.matchedCount === 0) return sendJson(res, 404, { error: 'Veículo não encontrado' });
       return sendJson(res, 200, { acknowledged: result.acknowledged });
@@ -108,5 +251,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Backend CRUD rodando em http://localhost:${PORT}`);
+  console.log(`Backend CRUD com suporte a imagens rodando em http://localhost:${PORT}`);
 });

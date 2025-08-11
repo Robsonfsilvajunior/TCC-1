@@ -83,6 +83,7 @@ interface ImageItemProps {
   uid: string;
   previewUrl: string;
   url: string;
+  id?: string; // ID da imagem no MongoDB
 }
 
 export function New() {
@@ -145,17 +146,28 @@ export function New() {
     const currentUid = user?.uid;
     const uidImage = uuidV4();
 
-    // Simulação de upload para desenvolvimento
-    // Em produção, isso seria substituído por uma chamada real para o MongoDB
-    const imageItem = {
-      name: uidImage,
-      uid: currentUid,
-      previewUrl: URL.createObjectURL(image),
-      url: URL.createObjectURL(image), // URL local temporária
-    };
+    try {
+      // Usar o serviço para fazer upload da imagem
+      const result = await vehicleService.uploadImages([image]);
+      
+      if (result.images && result.images.length > 0) {
+        const uploadedImage = result.images[0];
+        
+        const imageItem = {
+          name: uidImage,
+          uid: currentUid,
+          previewUrl: URL.createObjectURL(image), // Preview local
+          url: uploadedImage.id, // Apenas o ID, o backend vai construir a URL completa
+          id: uploadedImage.id // ID da imagem no MongoDB
+        };
 
-    setCarImages((images) => [...images, imageItem]);
-    toast.success("Imagem adicionada com sucesso!");
+        setCarImages((images) => [...images, imageItem]);
+        toast.success("Imagem adicionada com sucesso!");
+      }
+    } catch (error) {
+      console.error('Erro no upload:', error);
+      toast.error("Erro ao fazer upload da imagem!");
+    }
   }
 
   async function onSubmit(data: FormData) {
@@ -165,9 +177,9 @@ export function New() {
     }
 
     try {
-      // Enviar apenas as URLs das imagens (simulação, pois não há upload real)
-      const images = carImages.map(img => img.url);
-      const payload = { ...data, images };
+      // Enviar apenas os IDs das imagens (não as URLs completas)
+      const imageIds = carImages.map(img => img.id).filter(Boolean);
+      const payload = { ...data, images: imageIds };
       await vehicleService.createVehicle(payload);
       toast.success('Veículo cadastrado com sucesso!');
       reset();
