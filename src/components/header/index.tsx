@@ -3,7 +3,7 @@ import { AuthContext } from "../../contexts/authContext";
 import { Link } from "react-router-dom";
 import { RiLoginBoxLine, RiLogoutBoxLine } from "react-icons/ri";
 import { GiHamburgerMenu } from "react-icons/gi";
-import logoImg from "../../assets/drivexLogo.png";
+import logoImg from "../../assets/easysisLogo.png";
 import toast from "react-hot-toast";
 
 export function Header() {

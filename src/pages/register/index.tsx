@@ -1,5 +1,5 @@
 import { useEffect, useContext } from "react";
-import logoImg from "../../assets/drivexLogo.png";
+import logoImg from "../../assets/easysisLogo.png";
 
 import { Link, useNavigate } from "react-router-dom";
 import { Container } from "../../components/container";

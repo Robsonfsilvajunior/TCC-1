@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Container } from "../../components/container";
 import { toast } from "react-hot-toast";
-import logoImg from "../../assets/drivexLogo.png";
+import logoImg from "../../assets/easysisLogo.png";
 
 export function Home() {
   const [loading, setLoading] = useState(true);

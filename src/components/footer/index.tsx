@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { FaLinkedinIn, FaGithub, FaEnvelope } from "react-icons/fa";
-import logoImg from "../../assets/drivexLogo.png";
+// Removido: import { FaLinkedinIn, FaGithub, FaEnvelope } from "react-icons/fa";
+import logoImg from "../../assets/easysisLogo.png";
 
 export function Footer() {
   const scrollToTop = () => {
@@ -16,12 +16,9 @@ export function Footer() {
               <img src={logoImg} alt="Logo DriveX" className="w-32 h-auto" />
             </Link>
           </div>
-          <div className="text-center text-zinc-700">
-            <p className="mt-2 font-medium">
-              &copy; {new Date().getFullYear()} DriveX. Todos os direitos
-              reservados - Criado por Guilherme Bustamante.
-            </p>
-            <div className="mt-2 space-x-4">
+          <div className="text-center text-zinc-700 w-full">
+            {/* Removido o texto de direitos autorais */}
+            <div className="mt-2 flex flex-col md:flex-row justify-center items-center space-y-2 md:space-y-0 md:space-x-4">
               <Link
                 to="/"
                 className="text-gray-500 hover:text-mainRed transition-colors duration-200"
@@ -48,34 +45,7 @@ export function Footer() {
               </button>
             </div>
           </div>
-          <div className="flex space-x-4 mt-4">
-            <a
-              href="https://www.linkedin.com/in/gui-bus/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <FaLinkedinIn
-                size={24}
-                className="text-zinc-700 hover:text-mainRed transition-colors duration-200"
-              />
-            </a>
-            <a
-              href="https://github.com/gui-bus"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <FaGithub
-                size={24}
-                className="text-zinc-700 hover:text-mainRed transition-colors duration-200"
-              />
-            </a>
-            <a href="mailto:guibus.dev@gmail.com">
-              <FaEnvelope
-                size={24}
-                className="text-zinc-700 hover:text-mainRed transition-colors duration-200"
-              />
-            </a>
-          </div>
+          {/* Removido os links de LinkedIn, GitHub e Gmail */}
         </div>
       </footer>
     </div>
