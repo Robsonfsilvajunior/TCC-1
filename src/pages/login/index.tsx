@@ -64,7 +64,7 @@ export function Login() {
         <Link to="/" className="mb-6 max-w-sm w-full">
           <img
             src={logoImg}
-            alt="Logo DriveX"
+            alt="Logo Easysis"
             className="w-48 h-auto mx-auto"
           />
         </Link>

@@ -28,7 +28,7 @@ export function Header() {
     <header className="bg-white shadow-md mb-5 font-medium">
       <div className="container mx-auto flex justify-between items-center py-2 px-4 md:px-8">
         <Link to="/" className="flex items-center">
-          <img src={logoImg} alt="Logo DriveX" className="w-32 h-auto" />
+          <img src={logoImg} alt="Logo Easysis" className="w-32 h-auto" />
         </Link>
         {signed ? (
           <div className="hidden md:flex space-x-4">

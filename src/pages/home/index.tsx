@@ -17,12 +17,12 @@ export function Home() {
   return (
     <Container>
       <header className="flex items-center justify-center w-full max-w-xs mx-auto">
-        <img src={logoImg} alt="Logo da DriveX" className="w-full" />
+        <img src={logoImg} alt="Logo da Easysis" className="w-full" />
       </header>
 
       <main>
         <p className="text-xl text-gray-600 w-full mb-5 text-center">
-          🎓 TCC - DriveX - Teste de Conexão
+          🎓 TCC - Easysis - Teste de Conexão
         </p>
 
         <div className="text-center">

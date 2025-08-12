@@ -13,7 +13,7 @@ export function Footer() {
         <div className="flex flex-col items-center md:flex-row justify-between px-4">
           <div className="mb-4 md:mb-0">
             <Link to="/">
-              <img src={logoImg} alt="Logo DriveX" className="w-32 h-auto" />
+              <img src={logoImg} alt="Logo Easysis" className="w-32 h-auto" />
             </Link>
           </div>
           <div className="text-center text-zinc-700 w-full">

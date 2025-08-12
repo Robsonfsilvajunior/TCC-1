@@ -265,7 +265,7 @@ export function CarDetail() {
           </div>
 
           <a
-            href={`https://api.whatsapp.com/send?phone=${car?.whatsapp}&text=Olá! Gostaria de conversar sobre o ${car?.name} ${car?.model} que vi em seu anúncio no site DriveX. Poderia me fornecer mais informações a respeito? Obrigado!`}
+            href={`https://api.whatsapp.com/send?phone=${car?.whatsapp}&text=Olá! Gostaria de conversar sobre o ${car?.name} ${car?.model} que vi em seu anúncio no site Easysis. Poderia me fornecer mais informações a respeito? Obrigado!`}
             target="_blank"
             className="bg-green-500 hover:bg-green-600 transition-all duration-300 ease-in-out px-2 w-full text-white flex items-center justify-center gap-2 my-6 h-11 rounded-lg font-medium cursor-pointer"
           >

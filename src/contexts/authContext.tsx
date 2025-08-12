@@ -26,14 +26,14 @@ function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     // Verificar se há usuário salvo no localStorage
-    const savedUser = localStorage.getItem('drivex_user');
+    const savedUser = localStorage.getItem('Easysis_user');
     if (savedUser) {
       try {
         const userData = JSON.parse(savedUser);
         setUser(userData);
       } catch (error) {
         console.error('Erro ao carregar usuário do localStorage:', error);
-        localStorage.removeItem('drivex_user');
+        localStorage.removeItem('Easysis_user');
       }
     }
     setLoadingAuth(false);
@@ -42,12 +42,12 @@ function AuthProvider({ children }: AuthProviderProps) {
   function handleInfoUser({ name, email, uid }: userProps) {
     const userData = { name, email, uid };
     setUser(userData);
-    localStorage.setItem('drivex_user', JSON.stringify(userData));
+    localStorage.setItem('Easysis_user', JSON.stringify(userData));
   }
 
   function signOut() {
     setUser(null);
-    localStorage.removeItem('drivex_user');
+    localStorage.removeItem('Easysis_user');
   }
 
   return (
