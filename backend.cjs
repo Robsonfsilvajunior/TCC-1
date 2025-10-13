@@ -6,13 +6,14 @@ const { MongoClient, ObjectId } = require('mongodb');
 const multer = require('multer');
 const path = require('path');
 
-const PORT = 5000;
+const PORT = 500;
 const MONGODB_URI = 'mongodb+srv://tccunivap:SomosAmigos@cluster0.u48bk0h.mongodb.net/TCC?retryWrites=true&w=majority&appName=Cluster0';
 const DB_NAME = 'TCC';
 const COLLECTION = 'veiculos';
 const IMAGES_COLLECTION = 'images';
+const USERS_COLLECTION = 'users';
 
-let db, collection, imagesCollection;
+let db, collection, imagesCollection, usersCollection;
 
 // Configuração do multer para upload de imagens
 const storage = multer.memoryStorage();
@@ -37,6 +38,7 @@ async function connectDB() {
     db = client.db(DB_NAME);
     collection = db.collection(COLLECTION);
     imagesCollection = db.collection(IMAGES_COLLECTION);
+    usersCollection = db.collection(USERS_COLLECTION);
     console.log('Conectado ao MongoDB!');
   }
 }
@@ -88,6 +90,90 @@ const server = http.createServer(async (req, res) => {
       'Access-Control-Allow-Headers': 'Content-Type, Content-Length, Authorization, Accept, Origin, X-Requested-With' 
     });
     return res.end();
+  }
+
+  // POST /auth/register - registrar novo usuário
+  if (req.method === 'POST' && url.pathname === '/auth/register') {
+    const data = await parseBody(req);
+    
+    if (!data.email || !data.password || !data.name) {
+      return sendJson(res, 400, { error: 'Email, senha e nome são obrigatórios' });
+    }
+
+    try {
+      // Verificar se o usuário já existe
+      const existingUser = await usersCollection.findOne({ email: data.email });
+      if (existingUser) {
+        return sendJson(res, 409, { error: 'Usuário já cadastrado com este email' });
+      }
+
+      // Criar UID consistente baseado no email
+      const createConsistentUID = (email) => {
+        let hash = 0;
+        for (let i = 0; i < email.length; i++) {
+          const char = email.charCodeAt(i);
+          hash = ((hash << 5) - hash) + char;
+          hash = hash & hash;
+        }
+        return "user-" + Math.abs(hash).toString();
+      };
+
+      const uid = createConsistentUID(data.email);
+
+      // Criar usuário (em produção, a senha deveria ser hasheada)
+      const newUser = {
+        uid: uid,
+        email: data.email,
+        password: data.password, // AVISO: Em produção, use bcrypt para hashear
+        name: data.name,
+        createdAt: new Date()
+      };
+
+      await usersCollection.insertOne(newUser);
+
+      // Retornar dados do usuário (sem a senha)
+      return sendJson(res, 201, {
+        uid: newUser.uid,
+        email: newUser.email,
+        name: newUser.name
+      });
+    } catch (error) {
+      console.error('Erro ao registrar usuário:', error);
+      return sendJson(res, 500, { error: 'Erro interno do servidor' });
+    }
+  }
+
+  // POST /auth/login - fazer login
+  if (req.method === 'POST' && url.pathname === '/auth/login') {
+    const data = await parseBody(req);
+    
+    if (!data.email || !data.password) {
+      return sendJson(res, 400, { error: 'Email e senha são obrigatórios' });
+    }
+
+    try {
+      // Buscar usuário
+      const user = await usersCollection.findOne({ email: data.email });
+      
+      if (!user) {
+        return sendJson(res, 401, { error: 'Email ou senha inválidos' });
+      }
+
+      // Verificar senha (em produção, use bcrypt.compare)
+      if (user.password !== data.password) {
+        return sendJson(res, 401, { error: 'Email ou senha inválidos' });
+      }
+
+      // Retornar dados do usuário (sem a senha)
+      return sendJson(res, 200, {
+        uid: user.uid,
+        email: user.email,
+        name: user.name
+      });
+    } catch (error) {
+      console.error('Erro ao fazer login:', error);
+      return sendJson(res, 500, { error: 'Erro interno do servidor' });
+    }
   }
 
   // GET /images/:id - serve imagem do MongoDB
@@ -178,9 +264,9 @@ const server = http.createServer(async (req, res) => {
           if (imgUrl.startsWith('http://')) {
             return imgUrl;
           } else if (imgUrl.startsWith('/images/')) {
-            return `http://localhost:5000${imgUrl}`;
+            return `http://localhost:500${imgUrl}`;
           } else {
-            return `http://localhost:5000/images/${imgUrl}`;
+            return `http://localhost:500/images/${imgUrl}`;
           }
         });
       }
@@ -196,6 +282,21 @@ const server = http.createServer(async (req, res) => {
     try {
       const veiculo = await collection.findOne({ _id: new ObjectId(id) });
       if (!veiculo) return sendJson(res, 404, { error: 'Veículo não encontrado' });
+      
+      // Corrigir URLs das imagens
+      if (veiculo.images && Array.isArray(veiculo.images)) {
+        veiculo.images = veiculo.images.map(imgUrl => {
+          // Se já é uma URL completa, manter; se não, converter
+          if (imgUrl.startsWith('http://')) {
+            return imgUrl;
+          } else if (imgUrl.startsWith('/images/')) {
+            return `http://localhost:500${imgUrl}`;
+          } else {
+            return `http://localhost:500/images/${imgUrl}`;
+          }
+        });
+      }
+      
       return sendJson(res, 200, veiculo);
     } catch {
       return sendJson(res, 400, { error: 'ID inválido' });
@@ -207,9 +308,17 @@ const server = http.createServer(async (req, res) => {
     const data = await parseBody(req);
     if (!data || !data.name) return sendJson(res, 400, { error: 'Dados inválidos' });
     
-    // Se houver imagens, converter os IDs para URLs completas
+    // Se houver imagens, converter os IDs para URLs completas (se ainda não forem URLs)
     if (data.images && Array.isArray(data.images)) {
-      data.images = data.images.map(imageId => `http://localhost:5000/images/${imageId}`);
+      data.images = data.images.map(imageId => {
+        if (imageId.startsWith('http://')) {
+          return imageId;
+        } else if (imageId.startsWith('/images/')) {
+          return `http://localhost:500${imageId}`;
+        } else {
+          return `http://localhost:500/images/${imageId}`;
+        }
+      });
     }
     
     const result = await collection.insertOne(data);
@@ -221,9 +330,17 @@ const server = http.createServer(async (req, res) => {
     const id = url.pathname.split('/')[2];
     const data = await parseBody(req);
     try {
-      // Se houver imagens, converter os IDs para URLs completas
+      // Se houver imagens, converter os IDs para URLs completas (se ainda não forem URLs)
       if (data.images && Array.isArray(data.images)) {
-        data.images = data.images.map(imageId => `http://localhost:5000/images/${imageId}`);
+        data.images = data.images.map(imageId => {
+          if (imageId.startsWith('http://')) {
+            return imageId;
+          } else if (imageId.startsWith('/images/')) {
+            return `http://localhost:500${imageId}`;
+          } else {
+            return `http://localhost:500/images/${imageId}`;
+          }
+        });
       }
       
       const result = await collection.updateOne({ _id: new ObjectId(id) }, { $set: data });

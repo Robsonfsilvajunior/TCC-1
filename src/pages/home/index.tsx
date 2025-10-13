@@ -1,59 +1,136 @@
-import { useState, useEffect } from "react";
-import { Container } from "../../components/container";
+import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
+import { GrLocation } from "react-icons/gr";
+import { Link } from "react-router-dom";
+import { BarLoader } from "react-spinners";
 import logoImg from "../../assets/easysisLogo.png";
+import { Container } from "../../components/container";
+import { vehicleService } from "../../services/mongodbConnection";
+
+interface CarProps {
+  _id: string;
+  name: string;
+  model: string;
+  version: string;
+  year: string;
+  km: string;
+  city: string;
+  state: string;
+  price: string | number;
+  images: string[];
+  uid?: string;
+}
 
 export function Home() {
+  const [cars, setCars] = useState<CarProps[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadImages, setLoadImages] = useState<string[]>([]);
 
   useEffect(() => {
-    // Simular carregamento
-    setTimeout(() => {
-      setLoading(false);
-      toast.success("Página carregada com sucesso!");
-    }, 1000);
+    async function fetchCars() {
+      try {
+        setLoading(true);
+        const data = await vehicleService.getAllVehicles();
+        setCars(data);
+        toast.success("Catálogo carregado com sucesso!");
+      } catch (err) {
+        toast.error("Erro ao carregar catálogo de veículos!");
+        console.error("Erro ao buscar veículos:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchCars();
   }, []);
+
+  function handleImageLoad(id: string) {
+    setLoadImages((prevImageLoaded) => [...prevImageLoaded, id]);
+  }
+
+  if (loading) {
+    return (
+      <Container>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <BarLoader color={"#DC3237"} />
+            <p className="text-white mt-4">Carregando catálogo...</p>
+          </div>
+        </div>
+      </Container>
+    );
+  }
 
   return (
     <Container>
-      <header className="flex items-center justify-center w-full max-w-xs mx-auto">
+      <header className="flex items-center justify-center w-full max-w-xs mx-auto mb-8">
         <img src={logoImg} alt="Logo da Easysis" className="w-full" />
       </header>
 
-      <main>
-        <p className="text-xl text-gray-600 w-full mb-5 text-center">
-          🎓 TCC - Easysis - Teste de Conexão
+      <section className="bg-white p-4 rounded-lg w-full mb-4">
+        <h1 className="text-center text-2xl font-bold text-gray-800">
+          Catálogo de Veículos
+        </h1>
+        <p className="text-center text-gray-600">
+          Confira todos os veículos disponíveis
         </p>
+      </section>
 
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-green-600 mb-4">
-            ✅ Aplicação funcionando!
-          </h2>
-          
-          <p className="text-gray-600 mb-4">
-            A página está carregando corretamente. Agora vamos testar a conexão com o MongoDB.
-          </p>
-
-          <div className="bg-blue-100 p-4 rounded-lg">
-            <h3 className="font-bold text-blue-800 mb-2">Status da Conexão:</h3>
-            <p className="text-blue-700">
-              {loading ? "🔄 Carregando..." : "✅ Página carregada"}
-            </p>
-          </div>
-
-          <div className="mt-6">
-            <button 
-              onClick={() => {
-                toast.success("Teste de conexão iniciado!");
-                console.log("🔍 Testando conexão MongoDB...");
-              }}
-              className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700"
-            >
-              Testar Conexão MongoDB
-            </button>
-          </div>
-        </div>
+      <main className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {cars.map((car) => (
+          <section
+            key={car._id}
+            className="w-full bg-white rounded-lg cursor-pointer shadow-lg hover:shadow-xl transition-shadow"
+          >
+            <Link to={`/car/${car._id}`}>
+              <div
+                className="w-full h-56 max-h-72 rounded-lg relative"
+                style={{
+                  display: loadImages.includes(car._id) ? "none" : "block",
+                }}
+              >
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <BarLoader color={"#DC3237"} />
+                </div>
+              </div>
+              {car.images && car.images.length > 0 && (
+                <img
+                  src={car.images[0]}
+                  alt="Veículo"
+                  className="w-full rounded-t-lg mb-2 h-56 max-h-72 object-cover"
+                  onLoad={() => handleImageLoad(car._id)}
+                  style={{
+                    display: loadImages.includes(car._id) ? "block" : "none",
+                  }}
+                />
+              )}
+              <p className="font-bold my-2 px-2 uppercase lg:text-sm">
+                {car.name} {car.model}
+              </p>
+              <p className="text-zinc-500 px-2 text-xs uppercase">
+                {car.version}
+              </p>
+              <p className="text-zinc-500 px-2 text-xs">
+                {car.year} | {parseFloat(car.km).toLocaleString("pt-BR")} km
+              </p>
+              <p className="text-zinc-500 px-2 text-xs">
+                <GrLocation className="inline mr-1" />
+                {car.city} - {car.state}
+              </p>
+              <p className="font-bold text-lg text-red-600 px-2 mb-2">
+                R$ {parseFloat(car.price as string).toLocaleString("pt-BR")}
+              </p>
+            </Link>
+          </section>
+        ))}
       </main>
+
+      {cars.length === 0 && !loading && (
+        <div className="text-center mt-8">
+          <p className="text-white text-lg">
+            Nenhum veículo cadastrado no momento
+          </p>
+        </div>
+      )}
     </Container>
   );
 }

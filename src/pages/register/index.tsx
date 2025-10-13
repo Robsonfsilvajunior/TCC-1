@@ -1,16 +1,17 @@
-import { useEffect, useContext } from "react";
+import { useContext } from "react";
 import logoImg from "../../assets/easysisLogo.png";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { BsFillPersonPlusFill } from "react-icons/bs";
 import { Link, useNavigate } from "react-router-dom";
+import { z } from "zod";
 import { Container } from "../../components/container";
 import { Input } from "../../components/input";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { BsFillPersonPlusFill } from "react-icons/bs";
 
 
 import { AuthContext } from "../../contexts/authContext";
+import { authService } from "../../services/mongodbConnection";
 
 import toast from "react-hot-toast";
 
@@ -43,23 +44,30 @@ export function Register() {
 
 
   async function onSubmit(data: FormData) {
-    // Simulação de cadastro simples para desenvolvimento
-    // Em produção, isso seria substituído por uma chamada real para o MongoDB
-    const mockUser = {
-      uid: "user-" + Date.now(),
-      name: data.name,
-      email: data.email
-    };
-    
-    handleInfoUser(mockUser);
-    
-    console.log("CADASTRADO COM SUCESSO!");
-    toast.success(`Cadastro realizado!\nBem-vindo(a), ${data.name}!`, {
-      style: {
-        fontSize: "14px",
-      },
-    });
-    navigate("/", { replace: true });
+    try {
+      // Chamar API de registro
+      const userData = await authService.register(data.name, data.email, data.password);
+      
+      // Salvar dados do usuário no contexto
+      handleInfoUser({
+        uid: userData.uid,
+        name: userData.name,
+        email: userData.email
+      });
+      
+      console.log("CADASTRADO COM SUCESSO!");
+      toast.success(`Cadastro realizado!\nBem-vindo(a), ${data.name}!`, {
+        style: {
+          fontSize: "14px",
+        },
+      });
+      
+      navigate("/dashboard", { replace: true });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao registrar usuário';
+      toast.error(errorMessage);
+      console.error('Erro no registro:', error);
+    }
   }
 
   return (

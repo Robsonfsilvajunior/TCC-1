@@ -20,8 +20,8 @@ export async function closeConnection() {
   // Sem-operação no frontend
 }
 
-const API_URL = 'http://localhost:5000/veiculos';
-const IMAGES_API_URL = 'http://localhost:5000';
+const API_URL = 'http://localhost:500/veiculos';
+const IMAGES_API_URL = 'http://localhost:500';
 
 export const vehicleService = {
   async getAllVehicles(): Promise<any[]> {
@@ -81,5 +81,37 @@ export const vehicleService = {
 
   getImageUrl(imageId: string): string {
     return `${IMAGES_API_URL}/images/${imageId}`;
+  },
+};
+
+export const authService = {
+  async register(name: string, email: string, password: string): Promise<any> {
+    const res = await fetch(`${IMAGES_API_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password }),
+    });
+    
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'Erro ao registrar usuário');
+    }
+    
+    return res.json();
+  },
+
+  async login(email: string, password: string): Promise<any> {
+    const res = await fetch(`${IMAGES_API_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'Erro ao fazer login');
+    }
+    
+    return res.json();
   },
 };
