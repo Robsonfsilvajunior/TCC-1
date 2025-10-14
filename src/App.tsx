@@ -1,10 +1,11 @@
 import { createBrowserRouter } from "react-router-dom";
+import { CarDetail } from "./pages/car";
+import { Dashboard } from "./pages/dashboard";
+import { Edit } from "./pages/dashboard/edit";
+import { New } from "./pages/dashboard/new";
 import { Home } from "./pages/home";
 import { Login } from "./pages/login";
 import { Register } from "./pages/register";
-import { Dashboard } from "./pages/dashboard";
-import { New } from "./pages/dashboard/new";
-import { CarDetail } from "./pages/car";
 
 import { Layout } from "./components/layout";
 import { Private } from "./routes/Private";
@@ -36,6 +37,15 @@ const router = createBrowserRouter([
           <Private>
             {" "}
             <New />{" "}
+          </Private>
+        ),
+      },
+      {
+        path: "/dashboard/edit/:id",
+        element: (
+          <Private>
+            {" "}
+            <Edit />{" "}
           </Private>
         ),
       },

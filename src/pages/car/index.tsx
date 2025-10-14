@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Container } from "../../components/container";
 import { FaWhatsapp } from "react-icons/fa";
+import { Container } from "../../components/container";
 
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { vehicleService } from "../../services/mongodbConnection";
 
@@ -36,13 +36,7 @@ interface CarsProps {
   created: string;
   vehicleOwner: string;
   body: string;
-  images: ImagesCarProps[];
-}
-
-interface ImagesCarProps {
-  name: string;
-  uid: string;
-  url: string;
+  images: string[]; // URLs das imagens
 }
 
 export function CarDetail() {
@@ -134,15 +128,15 @@ export function CarDetail() {
 
   return (
     <Container>
-      {car && (
+      {car && car.images && car.images.length > 0 && (
         <Swiper
           slidesPerView={sliderPerView}
           scrollbar={{ draggable: true }}
           className="swiper-container"
         >
-          {car?.images.map((image) => (
-            <SwiperSlide key={image.name}>
-              <img src={image.url} className="w-full h-96 object-cover" />
+          {car.images.map((imageUrl, index) => (
+            <SwiperSlide key={index}>
+              <img src={imageUrl} alt={`${car.name} ${index + 1}`} className="w-full h-96 object-cover" />
             </SwiperSlide>
           ))}
         </Swiper>

@@ -1,13 +1,13 @@
-import { useEffect, useState, useContext } from "react";
-import { Container } from "../../components/container";
-import { DashboardHeader } from "../../components/panelHeader";
-import { FiTrash2 } from "react-icons/fi";
+import { useContext, useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import { FiEdit, FiTrash2 } from "react-icons/fi";
 import { GrLocation } from "react-icons/gr";
-import { vehicleService } from "../../services/mongodbConnection";
-import { AuthContext } from "../../contexts/authContext";
 import { Link } from "react-router-dom";
 import { BarLoader } from "react-spinners";
-import toast from "react-hot-toast";
+import { Container } from "../../components/container";
+import { DashboardHeader } from "../../components/panelHeader";
+import { AuthContext } from "../../contexts/authContext";
+import { vehicleService } from "../../services/mongodbConnection";
 
 interface CarProps {
   _id: string;
@@ -32,7 +32,9 @@ export function Dashboard() {
     async function fetchCars() {
       try {
         const data = await vehicleService.getAllVehicles();
-        setCars(data);
+        // Filtrar apenas carros do usuário logado
+        const userCars = data.filter((car: CarProps) => car.uid === user?.uid);
+        setCars(userCars);
       } catch (err) {
         toast.error("Erro ao carregar veículos!");
       }
@@ -45,33 +47,31 @@ export function Dashboard() {
   }
 
   async function handleDeleteCar(car: CarProps) {
-    toast("Funcionalidade temporariamente desabilitada para teste");
-  }
+    // Verificar se o usuário é o proprietário
+    if (car.uid !== user?.uid) {
+      toast.error("Você não tem permissão para deletar este veículo!");
+      return;
+    }
 
-  const greetings = {
-    morning: "Bom dia",
-    afternoon: "Boa tarde",
-    evening: "Boa noite",
-  };
+    const confirmDelete = window.confirm(
+      `Tem certeza que deseja deletar ${car.name} ${car.model}?`
+    );
 
-  function getGreeting(hour: number) {
-    if (hour >= 5 && hour < 12) {
-      return greetings.morning;
-    } else if (hour >= 12 && hour < 18) {
-      return greetings.afternoon;
-    } else {
-      return greetings.evening;
+    if (!confirmDelete) {
+      return;
+    }
+
+    try {
+      await vehicleService.deleteVehicle(car._id);
+      // Remover o carro da lista local
+      setCars((prevCars) => prevCars.filter((c) => c._id !== car._id));
+      toast.success("Veículo deletado com sucesso!");
+    } catch (err) {
+      toast.error("Erro ao deletar veículo!");
+      console.error("Erro ao deletar:", err);
     }
   }
 
-  const [greeting, setGreeting] = useState("Olá");
-
-  useEffect(() => {
-    const now = new Date();
-    const currentHour = now.getHours();
-    const currentGreeting = getGreeting(currentHour);
-    setGreeting(currentGreeting);
-  }, []);
 
   return (
     <Container>
@@ -125,6 +125,12 @@ export function Dashboard() {
                 className="bg-blue-600 w-full text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-center"
               >
                 Ver detalhes
+              </Link>
+              <Link
+                to={`/dashboard/edit/${car._id}`}
+                className="bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-600 transition-colors"
+              >
+                <FiEdit size={20} />
               </Link>
               <button
                 onClick={() => handleDeleteCar(car)}

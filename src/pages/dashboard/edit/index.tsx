@@ -1,18 +1,14 @@
-import { ChangeEvent, useContext, useEffect, useState } from "react";
-import { Container } from "../../../components/container";
-
-import { FiTrash } from "react-icons/fi";
-
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ChangeEvent, useContext, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { Input } from "../../../components/input";
-
-import { v4 as uuidV4 } from "uuid";
-import { AuthContext } from "../../../contexts/authContext";
-
 import { toast } from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+import { FiTrash } from "react-icons/fi";
+import { useNavigate, useParams } from "react-router-dom";
+import { v4 as uuidV4 } from "uuid";
+import { z } from "zod";
+import { Container } from "../../../components/container";
+import { Input } from "../../../components/input";
+import { AuthContext } from "../../../contexts/authContext";
 import { vehicleService } from "../../../services/mongodbConnection";
 
 const schema = z.object({
@@ -26,7 +22,6 @@ const schema = z.object({
     .min(4, "Campo obrigatório")
     .refine(
       (value) => {
-        // Aceita um valor com 4 dígitos ou um valor com 4 dígitos, uma barra e mais 4 dígitos (XXXX/XXXX)
         return /^\d{4}$|^\d{4}\/\d{4}$/.test(value);
       },
       {
@@ -82,48 +77,83 @@ interface ImageItemProps {
   uid: string;
   previewUrl: string;
   url: string;
-  id?: string; // ID da imagem no MongoDB
+  id?: string;
 }
 
-export function New() {
-  const { user } = useContext(AuthContext);
+export function Edit() {
+  const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
   const {
     register,
     handleSubmit,
     formState: { errors },
-    reset,
+    setValue,
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     mode: "onChange",
   });
 
   const [carImages, setCarImages] = useState<ImageItemProps[]>([]);
-
-  const greetings = {
-    morning: "Bom dia",
-    afternoon: "Boa tarde",
-    evening: "Boa noite",
-  };
-
-  function getGreeting(hour: number) {
-    if (hour >= 5 && hour < 12) {
-      return greetings.morning;
-    } else if (hour >= 12 && hour < 18) {
-      return greetings.afternoon;
-    } else {
-      return greetings.evening;
-    }
-  }
-
-  const [greeting, setGreeting] = useState("Olá");
+  const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const now = new Date();
-    const currentHour = now.getHours();
-    const currentGreeting = getGreeting(currentHour);
-    setGreeting(currentGreeting);
-  }, []);
+    async function loadVehicle() {
+      if (!id) {
+        toast.error("ID do veículo não fornecido");
+        navigate("/dashboard");
+        return;
+      }
+
+      try {
+        const vehicle = await vehicleService.getVehicleById(id);
+        
+        // Verificar se o usuário é o proprietário
+        if (vehicle.uid !== user?.uid) {
+          toast.error("Você não tem permissão para editar este veículo!");
+          navigate("/dashboard");
+          return;
+        }
+
+        // Preencher o formulário com os dados existentes
+        setValue("name", vehicle.name);
+        setValue("model", vehicle.model);
+        setValue("year", vehicle.year);
+        setValue("km", vehicle.km);
+        setValue("price", vehicle.price);
+        setValue("city", vehicle.city);
+        setValue("state", vehicle.state);
+        setValue("whatsapp", vehicle.whatsapp);
+        setValue("description", vehicle.description);
+        setValue("gas", vehicle.gas);
+        setValue("color", vehicle.color);
+        setValue("body", vehicle.body);
+        setValue("plateEnd", vehicle.plateEnd);
+        setValue("transmission", vehicle.transmission);
+        setValue("ipva", vehicle.ipva);
+        setValue("owner", vehicle.owner);
+        setValue("trade", vehicle.trade);
+        setValue("license", vehicle.license);
+        setValue("armored", vehicle.armored);
+        setValue("inspections", vehicle.inspections);
+        setValue("version", vehicle.version);
+
+        // Armazenar imagens existentes
+        if (vehicle.images && Array.isArray(vehicle.images)) {
+          setExistingImages(vehicle.images);
+        }
+
+        setLoading(false);
+      } catch (error) {
+        console.error("Erro ao carregar veículo:", error);
+        toast.error("Erro ao carregar dados do veículo!");
+        navigate("/dashboard");
+      }
+    }
+
+    loadVehicle();
+  }, [id, user, navigate, setValue]);
 
   async function handleFile(e: ChangeEvent<HTMLInputElement>) {
     if (e.target.files && e.target.files[0]) {
@@ -147,7 +177,6 @@ export function New() {
     const uidImage = uuidV4();
 
     try {
-      // Usar o serviço para fazer upload da imagem
       const result = await vehicleService.uploadImages([image]);
       
       if (result.images && result.images.length > 0) {
@@ -156,9 +185,9 @@ export function New() {
         const imageItem = {
           name: uidImage,
           uid: currentUid,
-          previewUrl: URL.createObjectURL(image), // Preview local
-          url: uploadedImage.id, // Apenas o ID, o backend vai construir a URL completa
-          id: uploadedImage.id // ID da imagem no MongoDB
+          previewUrl: URL.createObjectURL(image),
+          url: uploadedImage.id,
+          id: uploadedImage.id
         };
 
         setCarImages((images) => [...images, imageItem]);
@@ -171,65 +200,67 @@ export function New() {
   }
 
   async function onSubmit(data: FormData) {
-    if (carImages.length === 0) {
+    if (existingImages.length === 0 && carImages.length === 0) {
       toast.error("Por favor, envie pelo menos uma imagem.");
       return;
     }
 
-    if (!user?.uid) {
-      toast.error("Erro: usuário não autenticado.");
-      return;
-    }
-
     try {
-      // Enviar apenas os IDs das imagens (não as URLs completas)
-      const imageIds = carImages.map(img => img.id).filter(Boolean);
+      // Combinar imagens existentes com novas imagens
+      const newImageIds = carImages.map(img => img.id).filter(Boolean);
+      const allImages = [...existingImages, ...newImageIds];
+      
       const payload = { 
         ...data, 
-        images: imageIds,
-        uid: user.uid // Associar o veículo ao usuário logado
+        images: allImages,
+        uid: user?.uid // Manter o uid do proprietário
       };
-      await vehicleService.createVehicle(payload);
-      toast.success('Veículo cadastrado com sucesso!');
-      reset();
-      setCarImages([]);
-      // Redirecionar para o dashboard
-      navigate('/dashboard');
+      
+      await vehicleService.updateVehicle(id!, payload);
+      toast.success('Veículo atualizado com sucesso!');
+      navigate("/dashboard");
     } catch (err) {
-      toast.error('Erro ao cadastrar veículo!');
-      console.error("Erro ao cadastrar:", err);
+      toast.error('Erro ao atualizar veículo!');
+      console.error("Erro ao atualizar:", err);
     }
   }
 
   async function handleDeleteImage(item: ImageItemProps) {
-    try {
-      // Simulação de remoção para desenvolvimento
-      // Em produção, isso seria substituído por uma chamada real para o MongoDB
-      setCarImages((prevCarImages) =>
-        prevCarImages.filter((car: ImageItemProps) => car.url !== item.url)
-      );
-      toast.success("Imagem removida com sucesso!", {
-        icon: "🗑️",
-      });
-    } catch (err) {
-      toast.error("Erro ao deletar imagem!");
-    }
+    setCarImages((prevCarImages) =>
+      prevCarImages.filter((car: ImageItemProps) => car.url !== item.url)
+    );
+    toast.success("Imagem removida com sucesso!");
+  }
+
+  function handleDeleteExistingImage(imageUrl: string) {
+    setExistingImages((prev) => prev.filter((url) => url !== imageUrl));
+    toast.success("Imagem removida com sucesso!");
+  }
+
+  if (loading) {
+    return (
+      <Container>
+        <div className="flex items-center justify-center min-h-screen">
+          <p className="text-white">Carregando...</p>
+        </div>
+      </Container>
+    );
   }
 
   return (
     <Container>
       <header className="w-full max-w-3xl mx-auto text-center mb-4">
         <h1 className="text-white font-bold text-4xl mb-2">
-          {greeting}, {user?.name || "Visitante"}!
+          Editar Veículo
         </h1>
         <p className="text-white font-medium mt-6">
-          Preencha as informações do seu veículo para cadastrá-lo na plataforma
+          Atualize as informações do seu veículo
         </p>
       </header>
 
       <form className="w-full max-w-2xl mx-auto space-y-4" onSubmit={handleSubmit(onSubmit)}>
         <div className="mb-4">
-          <label className="text-white font-bold mt-2">Fotos do veículo:</label>
+          <label className="text-white font-bold mt-2">Adicionar novas fotos:</label>
           <input
             type="file"
             accept="image/*"
@@ -412,22 +443,23 @@ export function New() {
           type="submit"
           className="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 transition-colors"
         >
-          Cadastrar veículo
+          Atualizar veículo
         </button>
       </form>
 
       <div className="w-full max-w-2xl mx-auto mt-4">
-        <h2 className="text-white font-bold mb-2">Imagens carregadas:</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {carImages.map((item) => (
-            <div key={item.name} className="relative">
+        <h2 className="text-white font-bold mb-2">Imagens atuais:</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+          {existingImages.map((imageUrl, index) => (
+            <div key={index} className="relative">
               <img
-                src={item.previewUrl}
-                alt="Preview"
+                src={imageUrl}
+                alt="Existing"
                 className="w-full h-32 object-cover rounded-lg"
               />
               <button
-                onClick={() => handleDeleteImage(item)}
+                type="button"
+                onClick={() => handleDeleteExistingImage(imageUrl)}
                 className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 hover:bg-red-700"
               >
                 <FiTrash size={16} />
@@ -435,7 +467,32 @@ export function New() {
             </div>
           ))}
         </div>
+
+        {carImages.length > 0 && (
+          <>
+            <h2 className="text-white font-bold mb-2">Novas imagens:</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {carImages.map((item) => (
+                <div key={item.name} className="relative">
+                  <img
+                    src={item.previewUrl}
+                    alt="Preview"
+                    className="w-full h-32 object-cover rounded-lg"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteImage(item)}
+                    className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 hover:bg-red-700"
+                  >
+                    <FiTrash size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </Container>
   );
 }
+

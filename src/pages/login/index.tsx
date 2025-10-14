@@ -1,16 +1,17 @@
-import { useEffect, useContext } from "react";
+import { useContext } from "react";
 
 import logoImg from "../../assets/easysisLogo.png";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { RiLoginBoxLine } from "react-icons/ri";
 import { Link, useNavigate } from "react-router-dom";
+import { z } from "zod";
 import { Container } from "../../components/container";
 import { Input } from "../../components/input";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { RiLoginBoxLine } from "react-icons/ri";
 
 import { AuthContext } from "../../contexts/authContext";
+import { authService } from "../../services/mongodbConnection";
 
 import toast from "react-hot-toast";
 
@@ -40,22 +41,30 @@ export function Login() {
 
 
 
-  function onSubmit(data: FormData) {
-    // Simulação de login simples para desenvolvimento
-    // Em produção, isso seria substituído por uma chamada real para o MongoDB
-    const mockUser = {
-      uid: "user-" + Date.now(),
-      name: data.email.split('@')[0],
-      email: data.email
-    };
-    
-    handleInfoUser(mockUser);
-    toast.success(`Bem-vindo(a), ${mockUser.name}!`, {
-      style: {
-        fontSize: "14px",
-      },
-    });
-    navigate("/", { replace: true });
+  async function onSubmit(data: FormData) {
+    try {
+      // Chamar API de autenticação
+      const userData = await authService.login(data.email, data.password);
+      
+      // Salvar dados do usuário no contexto
+      handleInfoUser({
+        uid: userData.uid,
+        name: userData.name,
+        email: userData.email
+      });
+      
+      toast.success(`Bem-vindo(a), ${userData.name}!`, {
+        style: {
+          fontSize: "14px",
+        },
+      });
+      
+      navigate("/dashboard", { replace: true });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao fazer login';
+      toast.error(errorMessage);
+      console.error('Erro no login:', error);
+    }
   }
 
   return (
