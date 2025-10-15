@@ -250,17 +250,17 @@ export function Edit() {
   return (
     <Container>
       <header className="w-full max-w-3xl mx-auto text-center mb-4">
-        <h1 className="text-white font-bold text-4xl mb-2">
+        <h1 className="text-black font-bold text-4xl mb-2">
           Editar Veículo
         </h1>
-        <p className="text-white font-medium mt-6">
+        <p className="text-black font-medium mt-6">
           Atualize as informações do seu veículo
         </p>
       </header>
 
       <form className="w-full max-w-2xl mx-auto space-y-4" onSubmit={handleSubmit(onSubmit)}>
         <div className="mb-4">
-          <label className="text-white font-bold mt-2">Adicionar novas fotos:</label>
+          <label className="text-black font-bold mt-2">Adicionar novas fotos:</label>
           <input
             type="file"
             accept="image/*"
@@ -448,7 +448,7 @@ export function Edit() {
       </form>
 
       <div className="w-full max-w-2xl mx-auto mt-4">
-        <h2 className="text-white font-bold mb-2">Imagens atuais:</h2>
+        <h2 className="text-black font-bold mb-2">Imagens atuais:</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
           {existingImages.map((imageUrl, index) => (
             <div key={index} className="relative">
@@ -470,7 +470,7 @@ export function Edit() {
 
         {carImages.length > 0 && (
           <>
-            <h2 className="text-white font-bold mb-2">Novas imagens:</h2>
+            <h2 className="text-black font-bold mb-2">Novas imagens:</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {carImages.map((item) => (
                 <div key={item.name} className="relative">

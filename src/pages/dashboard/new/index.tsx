@@ -219,17 +219,17 @@ export function New() {
   return (
     <Container>
       <header className="w-full max-w-3xl mx-auto text-center mb-4">
-        <h1 className="text-white font-bold text-4xl mb-2">
+        <h1 className="text-black font-bold text-4xl mb-2">
           {greeting}, {user?.name || "Visitante"}!
         </h1>
-        <p className="text-white font-medium mt-6">
+        <p className="text-black font-medium mt-6">
           Preencha as informações do seu veículo para cadastrá-lo na plataforma
         </p>
       </header>
 
       <form className="w-full max-w-2xl mx-auto space-y-4" onSubmit={handleSubmit(onSubmit)}>
         <div className="mb-4">
-          <label className="text-white font-bold mt-2">Fotos do veículo:</label>
+          <label className="text-black font-bold mt-2">Fotos do veículo:</label>
           <input
             type="file"
             accept="image/*"
@@ -417,7 +417,7 @@ export function New() {
       </form>
 
       <div className="w-full max-w-2xl mx-auto mt-4">
-        <h2 className="text-white font-bold mb-2">Imagens carregadas:</h2>
+        <h2 className="text-black font-bold mb-2">Imagens carregadas:</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {carImages.map((item) => (
             <div key={item.name} className="relative">
